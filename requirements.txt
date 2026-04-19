@@ -1,4 +1,7 @@
-crewai>=0.86.0,<1.0.0
+# CrewAI 0.86–0.x: Python genelde <3.13 ister.
+# CrewAI 1.x: Python 3.10–3.13 (ve birçok 1.x sürümü <3.14) destekler — 3.13+ için 1.x gerekir.
+# OpenAI kullanıyorsan [openai] extra önerilir (CrewAI 1 yerel sağlayıcı).
+crewai[openai]>=1.0.0,<2.0.0
 streamlit>=1.39.0
 chromadb>=0.5.0
 openai>=1.50.0

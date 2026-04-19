@@ -19,15 +19,29 @@ from crewai import Agent, LLM
 from utils import run_static_security_scan, search_owasp_knowledge
 
 
+def _provider_model_id(raw: str, provider: str) -> str:
+    """
+    CrewAI 1.x için sağlayıcı önekli model id (örn. openai/gpt-4o-mini, groq/llama-3.3-70b-versatile).
+
+    .env'de sadece 'gpt-4o-mini' yazılmışsa openai/ eklenir; zaten 'openai/...' yazılmışsa dokunulmaz.
+    """
+    m = raw.strip()
+    if "/" in m:
+        return m
+    return f"{provider}/{m}"
+
+
 def _build_llm() -> LLM:
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key:
+        raw = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         return LLM(
-            model=os.getenv("GROQ_MODEL", "groq/llama-3.3-70b-versatile"),
+            model=_provider_model_id(raw, "groq"),
             api_key=groq_key,
         )
+    raw = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     return LLM(
-        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        model=_provider_model_id(raw, "openai"),
         api_key=os.getenv("OPENAI_API_KEY"),
     )
 
