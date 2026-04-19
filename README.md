@@ -4,6 +4,25 @@ Freelance ve öğrenci geliştiriciler için **OWASP odaklı** çoklu ajan (Crew
 
 **GitHub:** [kaganay/secure-code-mentor](https://github.com/kaganay/secure-code-mentor)
 
+## Önemli: Python sürümü (kurulum hatası alıyorsan)
+
+`pip install` şuna benzer bir hata veriyorsa:
+
+`No matching distribution found for crewai...` ve listede yalnızca **0.1.x … 0.11.x** görünüyorsa, büyük ihtimalle **Python 3.14 veya üzeri** (veya **3.9 ve altı**) kullanıyorsun. **CrewAI 1.x** PyPI’da şu an **`>=3.10,<3.14`** ile sınırlı; bu aralığın dışında pip uygun tekerlek bulamaz.
+
+**Yapman gereken:** [python.org](https://www.python.org/downloads/) üzerinden **Python 3.12 veya 3.13** kur. Sonra venv’i **o sürümle** oluştur:
+
+```powershell
+cd C:\Users\kagan\Projects\secure-code-mentor
+py -0
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python check_python_version.py
+pip install -r requirements.txt
+```
+
+`py -0` yüklü Pythonları listeler; `-3.12` yoksa kurduğun sürüme göre `-3.13` dene. `py` yoksa, kurulumdan gelen tam yol ile örneğin `"C:\Program Files\Python312\python.exe" -m venv .venv` kullan.
+
 ## Mimari (özet)
 
 | Bileşen | Dosya |
