@@ -1,7 +1,7 @@
 # Bu proje: Python 3.10, 3.11, 3.12 veya 3.13 ZORUNLU.
 # Python 3.14+ veya 3.9- ile pip yalnızca çok eski crewai (0.11.x) gösterir ve kurulum KIRILIR.
-# OpenAI: [openai] extra (CrewAI 1 yerel sağlayıcı).
-crewai[openai]>=1.0.0,<2.0.0
+# CrewAI 1.14+ için [openai] extra yok; düz paket yeterli (OpenAI model id: openai/gpt-4o-mini).
+crewai>=1.0.0,<2.0.0
 streamlit>=1.39.0
 chromadb>=0.5.0
 openai>=1.50.0
