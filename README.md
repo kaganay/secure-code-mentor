@@ -23,6 +23,20 @@ pip install -r requirements.txt
 
 `py -0` yüklü Pythonları listeler; `-3.12` yoksa kurduğun sürüme göre `-3.13` dene. `py` yoksa, kurulumdan gelen tam yol ile örneğin `"C:\Program Files\Python312\python.exe" -m venv .venv` kullan.
 
+### `Activate.ps1` sonrası hâlâ Python 3.14 / pip 3.14 görünüyorsa
+
+Windows’ta `python` veya `pip` bazen **global 3.14**’e gider (`AppData\Local\Python\pythoncore-3.14-64\...`). Sanal ortamı şu komutlarla **zorla** kullan:
+
+```powershell
+cd C:\Users\kagan\Projects\secure-code-mentor
+.\.venv\Scripts\python.exe --version
+.\.venv\Scripts\python.exe check_python_version.py
+.\.venv\Scripts\python.exe -m pip install -U pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+`python --version` yerine mutlaka `.\.venv\Scripts\python.exe --version` ile doğrula (3.12.x görmelisin).
+
 ## Mimari (özet)
 
 | Bileşen | Dosya |
