@@ -325,6 +325,70 @@ def extract_vulnerability_categories(markdown_text: str, limit: int = 12) -> dic
     return dict(Counter(cats).most_common(limit))
 
 
+# Rapor başlıkları — `tasks.py` ile birebir aynı kalmalı (UI ayrıştırması).
+_MARK_AUDITOR = "## Security_Auditor_Report"
+_MARK_PROFESSOR = "## Cyber_Security_Professor_Report"
+_MARK_ENGINEER = "## Refactored Code"
+
+
+@dataclass(frozen=True)
+class ReportSections:
+    """Streamlit sekmeleri için birleşik crew çıktısını üç bölüme ayırır."""
+
+    auditor: str
+    professor: str
+    engineer: str
+    raw: str
+
+
+def split_crew_report(raw_output: str) -> ReportSections:
+    """
+    CrewAI `kickoff()` genelde tek metin döndürür; kullanıcı deneyimi için bölümler ayrılır.
+
+    Neden başlık tabanlı?
+    JSON zorunluluğu bazı modellerde kırılgan; Markdown H2 başlıkları hem LLM hem insan için okunur.
+    """
+    text = (raw_output or "").strip()
+    if not text:
+        return ReportSections(auditor="", professor="", engineer="", raw="")
+
+    prof_idx = text.find(_MARK_PROFESSOR)
+    ref_idx = text.find(_MARK_ENGINEER)
+
+    if prof_idx != -1:
+        auditor = text[:prof_idx].strip()
+        after_prof = text[prof_idx:]
+        ref_rel = after_prof.find(_MARK_ENGINEER)
+        if ref_rel != -1:
+            professor = after_prof[:ref_rel].strip()
+            engineer = after_prof[ref_rel:].strip()
+        else:
+            professor = after_prof.strip()
+            engineer = ""
+        return ReportSections(
+            auditor=auditor or text,
+            professor=professor,
+            engineer=engineer,
+            raw=raw_output,
+        )
+
+    if ref_idx != -1:
+        return ReportSections(
+            auditor=text[:ref_idx].strip(),
+            professor="",
+            engineer=text[ref_idx:].strip(),
+            raw=raw_output,
+        )
+
+    return ReportSections(auditor=text, professor="", engineer="", raw=raw_output)
+
+
+def markdown_for_metrics(sections: ReportSections) -> str:
+    """Skor/kategori: çoğunlukla Auditor bulgularından; yoksa ham metin."""
+    base = sections.auditor.strip()
+    return base if base else sections.raw
+
+
 # ---------------------------------------------------------------------------
 # 5) Crew çalıştırma
 # ---------------------------------------------------------------------------

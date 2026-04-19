@@ -21,6 +21,8 @@ def build_tasks(
 ) -> list[Task]:
     audit_task = Task(
         description=(
+            "Çıktının en üstüne mutlaka şu başlığı koy (UI sekmeleri bununla ayrıştırır):\n"
+            "## Security_Auditor_Report\n\n"
             "1) Önce `run_static_security_scan` aracını çağır; argüman olarak aşağıdaki kodun "
             "TAMAMINI ver.\n"
             "2) Aracın çıktısını ve kodu birlikte değerlendir; OWASP Top 10'a göre ek bulgular ekle.\n"

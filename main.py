@@ -19,8 +19,10 @@ from utils import (
     build_rag_context_for_code,
     count_severities,
     extract_vulnerability_categories,
+    markdown_for_metrics,
     run_crew_on_code,
     security_score_1_to_100,
+    split_crew_report,
 )
 
 
@@ -53,9 +55,11 @@ def main() -> int:
     rag_context = build_rag_context_for_code(detailed.text)
     output = run_crew_on_code(code=detailed.text, rag_context=rag_context)
 
-    counts = count_severities(output)
+    sections = split_crew_report(output)
+    metrics_md = markdown_for_metrics(sections)
+    counts = count_severities(metrics_md)
     score = security_score_1_to_100(counts)
-    cats = extract_vulnerability_categories(output)
+    cats = extract_vulnerability_categories(metrics_md)
     print(
         f"[report] güvenlik_skoru(1-100)={score} "
         f"kritik={counts.critical} orta={counts.medium} düşük={counts.low} "
