@@ -1,16 +1,48 @@
 # SecureCode Mentor
 
-Freelance ve öğrenci geliştiriciler için **OWASP odaklı** çoklu ajan (CrewAI) kod güvenliği mentoru: statik sinyaller, RAG ile literatür desteği, eğitimsel açıklama ve güvenli refaktör önerisi.
+Freelance ve öğrenci geliştiriciler için **OWASP odaklı** çoklu ajan ([CrewAI](https://www.crewai.com/)) kod güvenliği mentoru: **anonimleştirme**, deterministik statik sinyaller, **RAG** ile OWASP literatürü, eğitimsel açıklama ve **güvenli refaktör** önerisi. Arayüz: **Streamlit** (`app.py`); otomasyon: **CLI** (`main.py`).
 
 **GitHub:** [kaganay/secure-code-mentor](https://github.com/kaganay/secure-code-mentor)
 
-## Önemli: Python sürümü (kurulum hatası alıyorsan)
+---
 
-`pip install` şuna benzer bir hata veriyorsa:
+## Özellikler
 
-`No matching distribution found for crewai...` ve listede yalnızca **0.1.x … 0.11.x** görünüyorsa, büyük ihtimalle **Python 3.14 veya üzeri** (veya **3.9 ve altı**) kullanıyorsun. **CrewAI 1.x** PyPI’da şu an **`>=3.10,<3.14`** ile sınırlı; bu aralığın dışında pip uygun tekerlek bulamaz.
+| Özellik | Açıklama |
+|--------|----------|
+| **Üç ajan, sıralı iş akışı** | `Security_Auditor` → `Cyber_Security_Professor` → `Senior_Refactor_Engineer` |
+| **Gizlilik** | LLM’e gitmeden önce IP, e-posta, JWT, sabit sırlar vb. anonimleştirilir (`utils.anonymize_code_detailed`) |
+| **Statik tarama** | `utils.static_security_scan_report`: SQLi/XSS/eval/shell=True/hardcoded secret desenleri — **denetim görevine otomatik enjekte** edilir |
+| **RAG** | `knowledge/*.pdf` → Chroma; Professor `search_owasp_knowledge` ile sorgular |
+| **Dashboard** | 1–100 skor, şiddet sayıları, kategori grafiği (model `**Severity:**` / `**Category:**` üretirse) |
+| **Çıktı** | Sekmeler + tam Markdown indirme; ham tool-JSON kaçakları sonradan temizlenir |
 
-**Yapman gereken:** [python.org](https://www.python.org/downloads/) üzerinden **Python 3.12 veya 3.13** kur. Sonra venv’i **o sürümle** oluştur:
+---
+
+## Mimari (dosyalar)
+
+| Bileşen | Dosya |
+|--------|--------|
+| CLI | `main.py` |
+| Streamlit UI | `app.py` |
+| Ajan tanımları | `agents.py` |
+| Görev zinciri (sequential) | `tasks.py` |
+| Anonimleştirme, statik tarama, RAG, skor, crew çalıştırma | `utils.py` |
+
+**Araçlar (güncel):**
+
+- **Statik tarama:** Aynı motor (`static_security_scan_report`) görev açıklamasına yazılır; böylece yerel küçük modellerin rapora `{"name": "run_static_security_scan", ...}` gibi **sahte araç JSON’u** basması engellenir. Kodda `@tool run_static_security_scan` tanımı durur; pipeline özeti görevde verilir.
+- **Professor:** `search_owasp_knowledge` — OWASP PDF pasajları.
+
+**Çıktı temizliği:** `crew.kickoff()` sonrası `sanitize_llm_tool_dump_artifacts` kalan tool-JSON blob’larını ayıklar.
+
+---
+
+## Python sürümü (kurulum hatası)
+
+`No matching distribution found for crewai...` ve listede yalnızca **0.1.x … 0.11.x** görünüyorsa büyük ihtimalle **Python 3.14+** veya **3.9−** kullanıyorsun. **CrewAI 1.x** şu an **`>=3.10,<3.14`** aralığında.
+
+**Önerilen:** Python **3.12** veya **3.13** kur; venv’i **o yorumlayıcıyla** oluştur:
 
 ```powershell
 cd C:\Users\kagan\Projects\secure-code-mentor
@@ -21,11 +53,13 @@ python check_python_version.py
 pip install -r requirements.txt
 ```
 
-`py -0` yüklü Pythonları listeler; `-3.12` yoksa kurduğun sürüme göre `-3.13` dene. `py` yoksa, kurulumdan gelen tam yol ile örneğin `"C:\Program Files\Python312\python.exe" -m venv .venv` kullan.
+`py` yoksa kurulum yolunla örneğin:
 
-### `Activate.ps1` sonrası hâlâ Python 3.14 / pip 3.14 görünüyorsa
+`"C:\Program Files\Python312\python.exe" -m venv .venv`
 
-Windows’ta `python` veya `pip` bazen **global 3.14**’e gider (`AppData\Local\Python\pythoncore-3.14-64\...`). Sanal ortamı şu komutlarla **zorla** kullan:
+### `Activate.ps1` sonrası hâlâ yanlış Python görünüyorsa
+
+Venv yorumlayıcısını **doğrudan** kullan:
 
 ```powershell
 cd C:\Users\kagan\Projects\secure-code-mentor
@@ -35,46 +69,18 @@ cd C:\Users\kagan\Projects\secure-code-mentor
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-`python --version` yerine mutlaka `.\.venv\Scripts\python.exe --version` ile doğrula (3.12.x görmelisin).
+---
 
-## Mimari (özet)
+## Kurulum
 
-| Bileşen | Dosya |
-|--------|--------|
-| CLI | `main.py` |
-| Streamlit UI | `app.py` |
-| Ajanlar | `agents.py` |
-| Görev zinciri (sequential) | `tasks.py` |
-| Anonimleştirme, araçlar, RAG, skor, crew | `utils.py` |
-
-**Ajanlar:** `Security_Auditor` → `Cyber_Security_Professor` → `Senior_Refactor_Engineer`
-
-**Araçlar:** `run_static_security_scan`, `search_owasp_knowledge`
-
-## LLM seçimi (Ollama / Groq / OpenAI)
-
-Üç ajan **aynı** LLM’i paylaşır; **tek yapılandırma** yeterli.
-
-| Mod | `.env` | Not |
-|-----|--------|-----|
-| **Yerel Ollama** | `USE_OLLAMA=1`, isteğe bağlı `OLLAMA_MODEL=llama3.2`, `OLLAMA_BASE_URL=http://localhost:11434` | [ollama.com](https://ollama.com) kur; `ollama pull <model>`. **API anahtarı yok**; LLM trafiği makinede kalır. |
-| Groq | `GROQ_API_KEY=...` | `USE_OLLAMA` kapalı olmalı. |
-| OpenAI | `OPENAI_API_KEY=...` | Öncelik: Ollama → Groq → OpenAI. |
-
-**CrewAI `memory=True`:** Bazı kurulumlarda bellek/embedding bulut ister. Sadece Ollama kullanırken hata alırsan `.env` içine `SECURECODE_DISABLE_MEMORY=1` dene.
-
-## Kurulum (senin yapman gerekenler)
-
-1. **Python 3.10–3.13** önerilir (`python --version`). **3.13** kullanıyorsan bu repo **CrewAI 1.x** ister (`requirements.txt`); eski `crewai<1` bu sürümde kurulamaz.
-2. **Sanal ortamı proje klasöründe oluştur:** `C:\Users\...\secure-code-mentor` içinde `python -m venv .venv` (venv’i `C:\Users\kagan` gibi üst klasörde oluşturma; `requirements.txt` orada yoktur).
-3. Repoyu klonla veya bu klasörde kal:
+1. Repoyu klonla, proje köküne gir:
 
    ```bash
    git clone https://github.com/kaganay/secure-code-mentor.git
    cd secure-code-mentor
    ```
 
-4. Sanal ortam ve bağımlılıklar (komutları **proje kökünde** çalıştır):
+2. Sanal ortam (kökta) ve bağımlılıklar:
 
    ```bash
    python -m venv .venv
@@ -82,31 +88,79 @@ cd C:\Users\kagan\Projects\secure-code-mentor
    pip install -r requirements.txt
    ```
 
-5. **Ortam değişkenleri:** `.env.example` dosyasını `.env` olarak kopyala ve düzenle:
+3. **Ortam değişkenleri:** `.env.example` dosyasını `.env` olarak kopyala ve doldur.
 
-   - `OPENAI_API_KEY` (veya `GROQ_API_KEY` + isteğe bağlı `GROQ_MODEL`)
-   - CrewAI `memory` embedding hatası alırsan geçici olarak: `SECURECODE_DISABLE_MEMORY=1`
+4. **OWASP PDF (isteğe bağlı):** `knowledge/` içine PDF ekle. İlk çalışmada Chroma kalıcı indeks `data/chroma/` altında oluşur.
 
-6. **OWASP PDF (isteğe bağlı):** `knowledge/` klasörüne PDF koy; uygulama ilk çalışmada Chroma indeksini `data/chroma/` altında oluşturur.
+---
 
-**Groq:** Kurulum hatası veya model hatası alırsan `pip install litellm` deneyebilir veya CrewAI dokümantasyonundaki Groq entegrasyonuna bak.
+## LLM seçimi (Ollama / Groq / OpenAI)
+
+Üç ajan **aynı** LLM yapılandırmasını paylaşır (`agents.py` → `_build_llm`).
+
+| Mod | `.env` | Not |
+|-----|--------|-----|
+| **Yerel Ollama** | `USE_OLLAMA=1`, isteğe bağlı `OLLAMA_MODEL=llama3.2`, `OLLAMA_BASE_URL=http://localhost:11434` | [ollama.com](https://ollama.com) + `ollama pull <model>`. API anahtarı gerekmez. |
+| **Groq** | `GROQ_API_KEY=...` | `USE_OLLAMA` kapalı olmalı. |
+| **OpenAI** | `OPENAI_API_KEY=...` | Öncelik sırası: Ollama → Groq → OpenAI. |
+
+**Bellek:** Crew `memory=True` (varsayılan). Embedding / bellek hatasında `.env` içine `SECURECODE_DISABLE_MEMORY=1` ekle.
+
+---
 
 ## Çalıştırma
+
+**Streamlit (önerilen):**
 
 ```bash
 streamlit run app.py
 ```
 
-CLI:
+Tarayıcıda genelde **http://localhost:8501** — dış IP ile paylaşım ev ağında çalışmayabilir; yerel adres kullan.
+
+**CLI:**
 
 ```bash
 python main.py --file examples/insecure_sample.py
 ```
 
+---
+
+## Streamlit arayüzü (kısa tur)
+
+- **Üst bölüm:** Başlık ve kısa açıklama; yan panelde LLM durumu ve mimari özeti.
+- **Kod girişi:** Dosya yükle veya metin alanına yapıştır → **Analizi başlat**.
+- **Özet:** Güvenlik skoru (1–100), kritik/orta/düşük sayıları, kategori çubuğu grafiği.
+- **Sekmeler:** Auditor, Professor, Refactor, Ham rapor; **Tam raporu indir (.md)**.
+
+Tema: `.streamlit/config.toml`.
+
+---
+
 ## Demo kodu
 
-`examples/insecure_sample.py` bilinçli olarak zayıf örnekler içerir; arayüzde yükleyip analiz edebilirsin.
+`examples/insecure_sample.py` bilinçli zayıf örnekler içerir; arayüzde yükleyip veya içeriği yapıştırıp analiz edebilirsin.
+
+---
+
+## Sorun giderme
+
+| Sorun | Öneri |
+|--------|--------|
+| `crewai` kurulmuyor | Python **3.10–3.13** + proje kökünde venv; `check_python_version.py` |
+| Tarayıcı zaman aşımı | `localhost:8501` kullan; güvenlik duvarı / port yönlendirme kontrolü |
+| Skor 100 / grafik boş | Küçük modeller bazen `**Severity:**` / `**Category:**` üretmez; **Ham rapor** sekmesine bak; statik blok yine görevde |
+| Memory / embedding hatası | `SECURECODE_DISABLE_MEMORY=1` |
+| Rapor bozuk JSON içeriyordu | Güncel sürümde görev enjekte + çıktı sanitization; `git pull` |
+
+---
+
+## Bağımlılıklar
+
+`requirements.txt`: `crewai` 1.x, `streamlit`, `chromadb`, `openai`, `python-dotenv`, `pypdf`, `pandas`.
+
+---
 
 ## Lisans
 
-Ders / kişisel proje kullanımı için; ihtiyaç halinde MIT veya benzeri lisans ekleyebilirsin.
+Ders / kişisel proje kullanımı; ihtiyaç halinde MIT veya benzeri lisans eklenebilir.
