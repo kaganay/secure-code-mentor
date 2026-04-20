@@ -389,6 +389,46 @@ def markdown_for_metrics(sections: ReportSections) -> str:
     return base if base else sections.raw
 
 
+def sanitize_llm_tool_dump_artifacts(text: str) -> str:
+    """
+    Yerel / zayıf modeller bazen araç çağrısını metne `{"name": "...", "parameters": ...}` olarak basar.
+    Bu, raporu kirletir; dengeli süslü parantez taramasıyla blob'ları çıkarır.
+    """
+    s = text or ""
+    tool_names = ("run_static_security_scan", "search_owasp_knowledge")
+    for _ in range(80):
+        removed = False
+        for tool in tool_names:
+            m = re.search(rf'\{{\s*"name"\s*:\s*"{re.escape(tool)}"', s)
+            if not m:
+                continue
+            start = m.start()
+            depth = 0
+            end = -1
+            for j in range(start, len(s)):
+                ch = s[j]
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = j + 1
+                        break
+            if end == -1:
+                s = s[:start] + s[m.end() :]
+            else:
+                k = end
+                while k < len(s) and s[k] in " \t\n\r;":
+                    k += 1
+                s = s[:start] + s[k:]
+            removed = True
+            break
+        if not removed:
+            break
+    s = re.sub(r"\n{5,}", "\n\n\n\n", s)
+    return s.strip()
+
+
 # ---------------------------------------------------------------------------
 # 5) Crew çalıştırma
 # ---------------------------------------------------------------------------
@@ -426,4 +466,4 @@ def run_crew_on_code(code: str, rag_context: str) -> str:
         memory=memory_on,
     )
     result = crew.kickoff()
-    return str(result)
+    return sanitize_llm_tool_dump_artifacts(str(result))

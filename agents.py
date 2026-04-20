@@ -5,9 +5,9 @@ Neden LLM tek fabrika fonksiyonundan?
     Üç ajanın aynı model ailesini paylaşması maliyet ve davranış tutarlılığı sağlar;
     Yerel Ollama / Groq / OpenAI seçimi ortam değişkeniyle tek noktadan yönetilir (tek motor, üç ajan).
 
-Neden iki farklı araç (Auditor: statik tarama, Professor: RAG)?
-    "Mühendislik yaklaşımı" kriteri: yalnızca LLM çıkarımı yerine ölçülebilir araç çıktıları
-    (deterministik tarama + literatür geri-getirme) raporda savunulabilir.
+Neden araç + deterministik katman?
+    Statik tarama `utils.static_security_scan_report` ile görev metnine enjekte edilir (Ollama'da
+    sahte tool-JSON'u önlemek için). Professor `search_owasp_knowledge` ile OWASP RAG kullanır.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import os
 
 from crewai import Agent, LLM
 
-from utils import run_static_security_scan, search_owasp_knowledge
+from utils import search_owasp_knowledge
 
 
 def _provider_model_id(raw: str, provider: str) -> str:
@@ -59,18 +59,18 @@ def _build_llm() -> LLM:
 
 
 def build_security_auditor() -> Agent:
-    """Security_Auditor: statik zafiyet sinyalleri + LLM sentezi."""
+    """Security_Auditor: deterministik statik tarama (görevde verilir) + LLM sentezi."""
     return Agent(
         role="Security_Auditor",
         goal=(
-            "Kodu OWASP Top 10 perspektifinden incele; önce run_static_security_scan aracını "
-            "kod üzerinde kullan, ardından bulguları şablonla raporla."
+            "Görevde verilen deterministik StaticScan çıktısını ve kodu OWASP Top 10 ile "
+            "birlikte değerlendir; bulguları şablonda raporla. Çıktıya JSON veya araç çağrısı yazma."
         ),
         backstory=(
-            "AppSec mühendisisin. Araç çıktısını (StaticScan) asla görmezden gelmezsin; "
-            "LLM ile genişletir ve yanlış pozitifleri eleştirirsin."
+            "AppSec mühendisisin. Statik tarama özeti görev metninde verilir; onu temel alır, "
+            "LLM ile derinleştirir ve yanlış pozitifleri eleştirirsin. Araç çağrısı JSON'u asla yazmazsın."
         ),
-        tools=[run_static_security_scan],
+        tools=[],
         verbose=True,
         llm=_build_llm(),
         allow_delegation=False,
@@ -84,11 +84,12 @@ def build_cyber_security_professor() -> Agent:
         goal=(
             "Auditor bulgularını akademik/pratik güvenlik diliyle açıkla; her bulgu için "
             "neden-sonuç zinciri ve gerçekçi saldırı senaryosu yaz. Gerekirse "
-            "search_owasp_knowledge ile literatür pasajı çek."
+            "search_owasp_knowledge ile literatür pasajı çek. "
+            "Çıktıya JSON veya araç çağrısı metni yazma; yalnızca Markdown."
         ),
         backstory=(
             "Üniversite düzeyi siber güvenlik profesörüsün. OWASP terminolojisini doğru "
-            "kullanırsın; korku yerine mekanizma anlatırsın."
+            "kullanırsın; korku yerine mekanizma anlatırsın. Tool invocation JSON'u rapora koymazsın."
         ),
         tools=[search_owasp_knowledge],
         verbose=True,

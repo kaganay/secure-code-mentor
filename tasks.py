@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from crewai import Agent, Task
 
+from utils import static_security_scan_report
+
 
 def build_tasks(
     code: str,
@@ -19,13 +21,18 @@ def build_tasks(
     professor: Agent,
     refactor_engineer: Agent,
 ) -> list[Task]:
+    static_block = static_security_scan_report(code)
+
     audit_task = Task(
         description=(
             "Çıktının en üstüne mutlaka şu başlığı koy (UI sekmeleri bununla ayrıştırır):\n"
             "## Security_Auditor_Report\n\n"
-            "1) Önce `run_static_security_scan` aracını çağır; argüman olarak aşağıdaki kodun "
-            "TAMAMINI ver.\n"
-            "2) Aracın çıktısını ve kodu birlikte değerlendir; OWASP Top 10'a göre ek bulgular ekle.\n"
+            "Aşağıdaki blok, `utils.static_security_scan_report` ile üretilmiş **deterministik** "
+            "statik taramadır (Crew aracı değil — tekrar JSON veya `run_static_security_scan` "
+            "çağrısı yazma).\n\n"
+            f"{static_block}\n"
+            "Bu çıktıyı ve aşağıdaki kodu birlikte değerlendir; OWASP Top 10'a göre ek bulgular ekle.\n"
+            "Raporunda asla `{\"name\":` veya `parameters` içeren araç çağrısı formatı kullanma.\n\n"
             "Her bulgu için ŞU FORMATI aynen kullan:\n"
             "### Finding <n>\n"
             "**Severity:** Critical|Medium|Low\n"
