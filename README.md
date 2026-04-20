@@ -51,6 +51,18 @@ cd C:\Users\kagan\Projects\secure-code-mentor
 
 **Araçlar:** `run_static_security_scan`, `search_owasp_knowledge`
 
+## LLM seçimi (Ollama / Groq / OpenAI)
+
+Üç ajan **aynı** LLM’i paylaşır; **tek yapılandırma** yeterli.
+
+| Mod | `.env` | Not |
+|-----|--------|-----|
+| **Yerel Ollama** | `USE_OLLAMA=1`, isteğe bağlı `OLLAMA_MODEL=llama3.2`, `OLLAMA_BASE_URL=http://localhost:11434` | [ollama.com](https://ollama.com) kur; `ollama pull <model>`. **API anahtarı yok**; LLM trafiği makinede kalır. |
+| Groq | `GROQ_API_KEY=...` | `USE_OLLAMA` kapalı olmalı. |
+| OpenAI | `OPENAI_API_KEY=...` | Öncelik: Ollama → Groq → OpenAI. |
+
+**CrewAI `memory=True`:** Bazı kurulumlarda bellek/embedding bulut ister. Sadece Ollama kullanırken hata alırsan `.env` içine `SECURECODE_DISABLE_MEMORY=1` dene.
+
 ## Kurulum (senin yapman gerekenler)
 
 1. **Python 3.10–3.13** önerilir (`python --version`). **3.13** kullanıyorsan bu repo **CrewAI 1.x** ister (`requirements.txt`); eski `crewai<1` bu sürümde kurulamaz.

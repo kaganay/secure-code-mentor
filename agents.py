@@ -3,7 +3,7 @@ agents.py — CrewAI ajanları (isimler hoca spesifikasyonu ile hizalı).
 
 Neden LLM tek fabrika fonksiyonundan?
     Üç ajanın aynı model ailesini paylaşması maliyet ve davranış tutarlılığı sağlar;
-    Groq/OpenAI seçimi ortam değişkeniyle tek noktadan yönetilir.
+    Yerel Ollama / Groq / OpenAI seçimi ortam değişkeniyle tek noktadan yönetilir (tek motor, üç ajan).
 
 Neden iki farklı araç (Auditor: statik tarama, Professor: RAG)?
     "Mühendislik yaklaşımı" kriteri: yalnızca LLM çıkarımı yerine ölçülebilir araç çıktıları
@@ -31,7 +31,19 @@ def _provider_model_id(raw: str, provider: str) -> str:
     return f"{provider}/{m}"
 
 
+def _use_ollama() -> bool:
+    """USE_OLLAMA=1 ile bulut API olmadan yerel inference (gizlilik / bağımsızlık)."""
+    return os.getenv("USE_OLLAMA", "").lower() in ("1", "true", "yes")
+
+
 def _build_llm() -> LLM:
+    # 1) Yerel Ollama — dış API anahtarı gerekmez; ollama.com ile servis çalışır olmalı.
+    if _use_ollama():
+        raw = os.getenv("OLLAMA_MODEL", "llama3.2").strip()
+        model = raw if raw.lower().startswith("ollama/") else f"ollama/{raw}"
+        base = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+        return LLM(model=model, base_url=base)
+
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key:
         raw = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")

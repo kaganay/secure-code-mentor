@@ -58,13 +58,15 @@ def main() -> None:
             "- **Örnek zayıf kod:** `examples/insecure_sample.py`\n"
         )
         st.divider()
-        st.subheader("API anahtarları")
-        if os.getenv("GROQ_API_KEY"):
+        st.subheader("LLM / API")
+        if os.getenv("USE_OLLAMA", "").lower() in ("1", "true", "yes"):
+            st.success("Yerel **Ollama** modu (`USE_OLLAMA=1`). Anahtar gerekmez; Ollama çalışıyor olmalı.")
+        elif os.getenv("GROQ_API_KEY"):
             st.success("Groq algılandı.")
         elif os.getenv("OPENAI_API_KEY"):
             st.success("OpenAI algılandı.")
         else:
-            st.error("`.env` içinde OPENAI_API_KEY veya GROQ_API_KEY gerekli.")
+            st.error("`.env`: `USE_OLLAMA=1` veya `GROQ_API_KEY` veya `OPENAI_API_KEY` ayarlayın.")
 
         st.divider()
         st.caption(
